@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TypeMaster ES — Método Ciego QWERTY</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#11182b; --panel2:#17213a; --text:#eef3ff; --muted:#8fa0c4;
+    --accent:#65a8ff; --green:#5ed39b; --red:#ff718d; --yellow:#ffd166; --border:#273454;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(135deg,#09101e,#111a32);color:var(--text)}
+  .app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+  aside{background:rgba(10,15,29,.94);border-right:1px solid var(--border);padding:22px;position:sticky;top:0;height:100vh;overflow:auto}
+  h1{font-size:22px;margin:0 0 4px}.sub{color:var(--muted);font-size:13px;margin-bottom:22px}
+  .section{margin:18px 0 8px;color:#b8c5df;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+  .lesson{padding:10px 12px;border-radius:10px;margin:6px 0;background:transparent;color:#cbd5ee;cursor:pointer;border:1px solid transparent;font-size:14px}
+  .lesson:hover{background:#151f36}.lesson.active{background:#1a2948;border-color:#31538a;color:white}
+  main{padding:28px;max-width:1250px;width:100%;margin:auto}
+  .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .titlebox h2{margin:0;font-size:24px}.titlebox p{margin:4px 0 0;color:var(--muted)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  button,select{background:#18233d;color:white;border:1px solid #30405f;padding:10px 14px;border-radius:10px;font-weight:600}
+  .lesson-picker{position:relative}
+  .lesson-picker-panel{display:none;position:absolute;right:0;top:calc(100% + 8px);z-index:20;width:360px;max-height:430px;overflow:auto;background:#11182b;border:1px solid #30405f;border-radius:14px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+  .lesson-picker.open .lesson-picker-panel{display:block}
+  .picker-actions{display:flex;gap:8px;position:sticky;top:-12px;background:#11182b;padding:8px 0 10px;z-index:1}
+  .picker-group{margin:10px 0 6px;color:#aebddd;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+  .picker-item{display:flex;align-items:center;gap:9px;padding:8px;border-radius:8px;color:#dce6fa;font-size:13px}
+  .picker-item:hover{background:#18233d}
+  .picker-item input{accent-color:#65a8ff}
+  .selection-note{font-size:12px;color:#8fa0c4;max-width:340px}
+  button{cursor:pointer}button:hover{filter:brightness(1.1)}
+  .primary{background:linear-gradient(135deg,#377af5,#5e9fff);border:0}
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}
+  .stat{background:rgba(17,24,43,.9);border:1px solid var(--border);border-radius:14px;padding:14px}
+  .stat .v{font-size:25px;font-weight:800}.stat .k{font-size:12px;color:var(--muted);margin-top:3px}
+  .trainer{background:rgba(17,24,43,.92);border:1px solid var(--border);border-radius:18px;padding:20px}
+  .progress{height:7px;background:#202d49;border-radius:10px;overflow:hidden;margin-bottom:18px}.progress>div{height:100%;width:0;background:linear-gradient(90deg,#4c8df6,#5ed39b)}
+  #text{font-family:"SFMono-Regular",Consolas,monospace;font-size:28px;line-height:1.65;letter-spacing:.5px;min-height:160px;word-break:break-word}
+  .char.correct{color:var(--green)} .char.wrong{color:white;background:var(--red);border-radius:3px} .char.current{border-bottom:3px solid var(--accent);color:white}
+  .hint{margin:16px 0 10px;color:var(--muted);font-size:13px}
+  #input{position:absolute;opacity:0;pointer-events:none}
+  .keyboard{margin-top:20px;background:#0c1325;padding:14px;border-radius:16px;border:1px solid var(--border);overflow-x:auto}
+  .row{display:flex;gap:6px;margin:6px 0;justify-content:center;min-width:850px}.key{height:52px;min-width:48px;padding:5px 7px;border-radius:8px;background:#1b2743;border:1px solid #344666;display:flex;align-items:center;justify-content:center;font-size:13px;color:#dbe5fb;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+  .key.wide{min-width:74px}.key.xwide{min-width:105px}.key.space{min-width:290px}.key.next{outline:2px solid var(--accent);background:#263b64}.key.err{background:#6d2438}
+  .bottomgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  .card{background:rgba(17,24,43,.92);border:1px solid var(--border);border-radius:16px;padding:16px}
+  .card h3{margin:0 0 10px;font-size:15px}.small{font-size:13px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;border-bottom:1px solid #26344f;text-align:left}
+  .badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#203052;color:#bcd2ff;font-size:11px}
+  @media(max-width:900px){.app{grid-template-columns:1fr}aside{position:relative;height:auto}.stats{grid-template-columns:repeat(2,1fr)}.bottomgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <h1>TypeMaster ES</h1>
+  <div class="sub">Método ciego · QWERTY español</div>
+  <div id="lessonList"></div>
+</aside>
+<main>
+  <div class="topbar">
+    <div class="titlebox"><h2 id="lessonTitle">Lección</h2><p id="lessonDesc"></p></div>
+    <div class="controls">
+      <div class="lesson-picker" id="lessonPicker">
+        <button type="button" id="lessonPickerBtn">Lecciones seleccionadas: 1 ▾</button>
+        <div class="lesson-picker-panel" id="lessonPickerPanel">
+          <div class="picker-actions">
+            <button type="button" id="selectAllBtn">Todas</button>
+            <button type="button" id="selectNoneBtn">Ninguna</button>
+          </div>
+          <div id="lessonPickerList"></div>
+        </div>
+      </div>
+      <select id="duration">
+        <option value="0">Texto completo</option>
+        <option value="60">1 minuto</option>
+        <option value="180">3 minutos</option>
+        <option value="300">5 minutos</option>
+      </select>
+      <button id="newBtn">Nueva práctica</button>
+      <button class="primary" id="startBtn">Empezar</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="v" id="wpm">0</div><div class="k">PPM / WPM</div></div>
+    <div class="stat"><div class="v" id="cpm">0</div><div class="k">Pulsaciones/min</div></div>
+    <div class="stat"><div class="v" id="acc">100%</div><div class="k">Precisión</div></div>
+    <div class="stat"><div class="v" id="errors">0</div><div class="k">Errores</div></div>
+    <div class="stat"><div class="v" id="time">00:00</div><div class="k">Tiempo</div></div>
+  </div>
+
+  <div class="trainer" id="trainer">
+    <div class="progress"><div id="bar"></div></div>
+    <div id="text"></div>
+    <input id="input" autocomplete="off" autocapitalize="off" spellcheck="false"/>
+    <div class="hint">Haz clic en “Empezar” y escribe sin mirar el teclado. Backspace está permitido, pero los fallos quedan registrados.</div>
+    <div class="selection-note" id="selectionNote">Sesión configurada con 1 lección.</div>
+    <div class="keyboard" id="keyboard"></div>
+  </div>
+
+  <div class="bottomgrid">
+    <div class="card">
+      <h3>Diagnóstico de errores</h3>
+      <div id="errorMap" class="small">Todavía no hay datos. Empieza una sesión.</div>
+    </div>
+    <div class="card">
+      <h3>Últimos resultados</h3>
+      <div id="history" class="small">Sin sesiones guardadas.</div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script>
+const groups = [
+  {name:"Fundamentos", lessons:[
+    ["Fila guía: ASDF JKLÑ","Practica la posición base y el retorno de los dedos.","asdf jklñ asdf jklñ fjdk slañ asdf ñlkj fdsa"],
+    ["Fila superior","QWERTYUIOP con combinaciones progresivas.","qwer uiop qwerty uiop perro quiero rueda tipo puerta"],
+    ["Fila inferior","ZXCVBNM y desplazamientos de dedos.","zxcv bnm zxcvbnm mano banco zona cambio vena"],
+    ["Todo el alfabeto","Frases cortas usando todo el teclado alfabético.","El veloz murciélago hindú comía feliz cardillo y kiwi. La cigüeña tocaba el saxofón detrás del palenque de paja."]
+  ]},
+  {name:"Números", lessons:[
+    ["Números 1–5","Dominio de la mitad izquierda de la fila numérica.","12345 54321 11223 44551 13524 25431 123 451 342 215"],
+    ["Números 6–0","Dominio de la mitad derecha.","67890 09876 66778 99006 68079 79680 678 906 879 760"],
+    ["Números completos","Secuencias, teléfonos, fechas y cantidades.","1234567890 2026 1492 28092026 679381245 918273645 1000 25000 9876543210"],
+    ["Decimales y porcentajes","Coma decimal, puntos y porcentajes.","12,50 3,1416 98,7% 0,25% 1.250,75 99,99 17,5% 2.026,00"]
+  ]},
+  {name:"Símbolos", lessons:[
+    ["Signos básicos","Punto, coma, dos puntos, punto y coma, interrogación y exclamación.","Hola, mundo. ¿Qué tal? ¡Muy bien! Atención: practica; repite, corrige."],
+    ["Paréntesis y comillas","Paréntesis, comillas y apóstrofos.","(texto) [dato] {valor} «hola» \"mundo\" 'prueba' (123) [ABC] {x+y}"],
+    ["Operadores","Símbolos matemáticos y comparadores.","1+2=3 7-4=3 5*6=30 20/4=5 9>3 2<8 5>=5 4<=9 7!=8"],
+    ["Símbolos de programación","Práctica intensiva de símbolos frecuentes.","@ # $ % & / \\ | _ - + = * ^ ~ ` < > [ ] { } ( ) ; : , ."],
+    ["Correo y web","Patrones habituales de email, URLs y nombres de usuario.","nombre.apellido@correo.es usuario_2026@dominio.com https://ejemplo.es/ruta?id=25&lang=es"],
+    ["Contraseñas y cadenas","Secuencias exigentes con mayúsculas, números y símbolos.","R7!pL2#xQ9@ K4$zM8%tN1& Qw3!Er5@Ty7# 2026_Metodo+Ciego!"]
+  ]},
+  {name:"Avanzado", lessons:[
+    ["Mayúsculas y Shift","Alternancia de mayúsculas, minúsculas y símbolos.","Madrid España Zaragoza Teruel UAX QWERTY Shift MAYÚSCULAS Minúsculas ÁÉÍÓÚ Ñandú"],
+    ["Tildes y diéresis","Caracteres propios del español.","á é í ó ú ü Á É Í Ó Ú Ü pingüino lingüística camión acción corazón día país"],
+    ["Texto profesional","Párrafos con puntuación real.","El objetivo es escribir con precisión, ritmo y constancia. Una buena técnica evita mirar el teclado, reduce errores y mejora la velocidad sostenida."],
+    ["Teclado total","Mezcla completa de letras, números y caracteres especiales.","Informe_2026: Total=1.248,75€; precisión>=98%; usuario@empresa.es; clave={Qw7!_9#}; ¿resultado? ¡Excelente!"]
+  ]}
+];
+
+const extraTexts = {
+ "Números completos":[
+  "9081726354 1029384756 5647382910 202620272028 15091996 06092026 637281945 918273640",
+  "10 20 30 40 50 60 70 80 90 100 250 500 750 1000 5000 10000 250000 999999"
+ ],
+ "Símbolos de programación":[
+  "@@@ ### $$$ %%% &&& /// \\\\\\ ||| ___ --- +++ === *** ^^^ ~~~ ``` <<< >>>",
+  "a@b #tag $precio %dato &otro /ruta \\carpeta |pipe _snake-case +suma=valor *factor ^potencia"
+ ],
+ "Teclado total":[
+  "A1! b2@ C3# d4$ E5% f6& G7/ h8( I9) j0= K? l¿ M¡ n! Ñ_ o- P+ q* R; s: T, u. V< w> X[ y] Z{ ü}",
+  "Pedido #A-2026/09: 3×125,50€ = 376,50€; IVA=21%; correo: cliente_01@dominio.es"
+ ]
+};
+
+let current = null, currentIndex={g:0,l:0}, target="", pos=0, started=false, startTime=0, timer=null, totalTyped=0, mistakes=0, errKeys={}, deadline=0;
+let selectedLessons = new Set(["0-0"]);
+const $=id=>document.getElementById(id);
+
+function renderLessons(){
+ let html="";
+ groups.forEach((g,gi)=>{
+   html += `<div class="section">${g.name}</div>`;
+   g.lessons.forEach((l,li)=> html += `<div class="lesson" data-g="${gi}" data-l="${li}">${l[0]}</div>`);
+ });
+ $("lessonList").innerHTML=html;
+ document.querySelectorAll(".lesson").forEach(el=>el.onclick=()=>{
+   const key=`${el.dataset.g}-${el.dataset.l}`;
+   selectedLessons = new Set([key]);
+   syncPicker();
+   selectLesson(+el.dataset.g,+el.dataset.l,el);
+ });
+ renderLessonPicker();
+}
+function selectLesson(g,l,el){
+ currentIndex={g,l};
+ current=groups[g].lessons[l];
+ document.querySelectorAll(".lesson").forEach(x=>x.classList.remove("active"));
+ const activeEl = el || document.querySelector(`.lesson[data-g="${g}"][data-l="${l}"]`);
+ if(activeEl) activeEl.classList.add("active");
+ $("lessonTitle").textContent=current[0];
+ $("lessonDesc").textContent=current[1];
+ newPractice(false);
+}
+function newPractice(pickRandom=true){
+ stopTimer(); started=false; pos=0; totalTyped=0; mistakes=0; errKeys={};
+
+ if(pickRandom){
+   const pool=[...selectedLessons];
+   if(!pool.length){
+     selectedLessons.add("0-0");
+     syncPicker();
+   }
+   const choices=[...selectedLessons];
+   const chosen=choices[Math.floor(Math.random()*choices.length)];
+   const [g,l]=chosen.split("-").map(Number);
+   currentIndex={g,l};
+   current=groups[g].lessons[l];
+   document.querySelectorAll(".lesson").forEach(x=>x.classList.remove("active"));
+   const activeEl=document.querySelector(`.lesson[data-g="${g}"][data-l="${l}"]`);
+   if(activeEl) activeEl.classList.add("active");
+   $("lessonTitle").textContent=current[0];
+   $("lessonDesc").textContent=current[1];
+ }
+
+ let variants=[current[2], ...(extraTexts[current[0]]||[])];
+ target=variants[Math.floor(Math.random()*variants.length)];
+ renderText(); resetStats(); updateKeyboard();
+ $("startBtn").textContent="Empezar";
+}
+
+function renderLessonPicker(){
+ let html="";
+ groups.forEach((g,gi)=>{
+   html += `<div class="picker-group">${g.name}</div>`;
+   g.lessons.forEach((l,li)=>{
+     const key=`${gi}-${li}`;
+     html += `<label class="picker-item"><input type="checkbox" data-key="${key}" ${selectedLessons.has(key)?"checked":""}> <span>${l[0]}</span></label>`;
+   });
+ });
+ $("lessonPickerList").innerHTML=html;
+ $("lessonPickerList").querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+   cb.addEventListener("change",()=>{
+     if(cb.checked) selectedLessons.add(cb.dataset.key);
+     else selectedLessons.delete(cb.dataset.key);
+     if(selectedLessons.size===0){
+       cb.checked=true;
+       selectedLessons.add(cb.dataset.key);
+     }
+     syncPicker();
+   });
+ });
+ syncPicker();
+}
+
+function syncPicker(){
+ const boxes=$("lessonPickerList").querySelectorAll('input[type="checkbox"]');
+ boxes.forEach(cb=>cb.checked=selectedLessons.has(cb.dataset.key));
+ const n=selectedLessons.size;
+ $("lessonPickerBtn").textContent=`Lecciones seleccionadas: ${n} ▾`;
+ $("selectionNote").textContent=n===1
+   ? "Sesión configurada con 1 lección."
+   : `Sesión configurada con ${n} lecciones. Cada nueva práctica elegirá una al azar.`;
+}
+
+function renderText(){
+ $("text").innerHTML=[...target].map((c,i)=>`<span class="char ${i===pos?'current':''}" data-i="${i}">${c===' ' ? '&nbsp;' : escapeHtml(c)}</span>`).join("");
+ $("bar").style.width=(pos/Math.max(1,target.length)*100)+"%";
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function start(){
+ if(started) return;
+ started=true; startTime=Date.now(); deadline=+$("duration").value;
+ $("startBtn").textContent="Escribiendo…";
+ $("input").focus();
+ timer=setInterval(updateStats,200);
+}
+function stopTimer(){if(timer){clearInterval(timer);timer=null}}
+function elapsed(){return Math.max(.001,(Date.now()-startTime)/1000)}
+function updateStats(){
+ if(!started) return;
+ let sec=elapsed();
+ if(deadline && sec>=deadline){finish();return}
+ let mins=sec/60;
+ let cpm=Math.round(totalTyped/mins);
+ let wpm=Math.round((totalTyped/5)/mins);
+ let acc=totalTyped?Math.max(0,((totalTyped-mistakes)/totalTyped)*100):100;
+ $("cpm").textContent=cpm;
+ $("wpm").textContent=wpm;
+ $("acc").textContent=acc.toFixed(1)+"%";
+ $("errors").textContent=mistakes;
+ $("time").textContent=formatTime(sec);
+ updateErrors();
+}
+function formatTime(sec){sec=Math.floor(sec);return String(Math.floor(sec/60)).padStart(2,'0')+":"+String(sec%60).padStart(2,'0')}
+function finish(){
+ if(!started)return;
+ updateStats(); started=false; stopTimer(); $("startBtn").textContent="Repetir";
+ $("bar").style.width="100%";
+ saveHistory();
+ alert(`Sesión finalizada\nVelocidad: ${$("wpm").textContent} WPM\nPrecisión: ${$("acc").textContent}\nErrores: ${mistakes}`);
+}
+function resetStats(){["wpm","cpm","errors"].forEach(id=>$(id).textContent="0");$("acc").textContent="100%";$("time").textContent="00:00";$("errorMap").textContent="Todavía no hay datos. Empieza una sesión."}
+function handleKey(e){
+ if(!started) return;
+ if(["Shift","Control","Alt","Meta","CapsLock","Tab","Escape"].includes(e.key)) return;
+ e.preventDefault();
+ if(e.key==="Backspace"){
+   if(pos>0){pos--; [...$("text").children].forEach((s,i)=>{if(i>=pos)s.className="char"}); renderText(); updateKeyboard();}
+   return;
+ }
+ if(e.key.length!==1) return;
+ totalTyped++;
+ let expected=target[pos];
+ let span=$("text").children[pos];
+ if(e.key===expected){
+   span.classList.remove("current"); span.classList.add("correct"); pos++;
+ } else {
+   mistakes++; errKeys[expected]=(errKeys[expected]||0)+1;
+   span.classList.remove("current"); span.classList.add("wrong");
+   setTimeout(()=>{span.classList.remove("wrong");span.classList.add("current")},120);
+ }
+ if(pos>=target.length){finish(); return}
+ renderText(); updateStats(); updateKeyboard();
+}
+function updateErrors(){
+ let entries=Object.entries(errKeys).sort((a,b)=>b[1]-a[1]);
+ if(!entries.length){$("errorMap").textContent="Sin errores por ahora.";return}
+ $("errorMap").innerHTML="<table><tr><th>Tecla esperada</th><th>Fallos</th></tr>"+entries.map(([k,v])=>`<tr><td><span class="badge">${escapeHtml(k===' '?'Espacio':k)}</span></td><td>${v}</td></tr>`).join("")+"</table>";
+}
+const kbRows=[
+ ["º","1","2","3","4","5","6","7","8","9","0","'","¡","Backspace"],
+ ["Tab","q","w","e","r","t","y","u","i","o","p","`","+","ç"],
+ ["Caps","a","s","d","f","g","h","j","k","l","ñ","´","Enter"],
+ ["Shift","<","z","x","c","v","b","n","m",",",".","-","Shift"],
+ ["Ctrl","Alt","Espacio","AltGr","Ctrl"]
+];
+function renderKeyboard(){
+ $("keyboard").innerHTML=kbRows.map(row=>`<div class="row">${row.map(k=>{
+ let cls="key"; if(["Backspace","Tab","Caps","Enter","Shift","Ctrl","Alt","AltGr"].includes(k))cls+=" wide"; if(k==="Espacio")cls+=" space";
+ return `<div class="${cls}" data-key="${escapeHtml(k)}">${escapeHtml(k)}</div>`
+ }).join("")}</div>`).join("");
+}
+function updateKeyboard(){
+ document.querySelectorAll(".key").forEach(k=>k.classList.remove("next","err"));
+ if(!target||pos>=target.length)return;
+ let ch=target[pos];
+ let lookup=ch===" "?"Espacio":ch.toLowerCase();
+ let key=[...document.querySelectorAll(".key")].find(k=>k.dataset.key.toLowerCase()===lookup);
+ if(key)key.classList.add("next");
+}
+function saveHistory(){
+ let h=JSON.parse(localStorage.getItem("typemaster_history")||"[]");
+ h.unshift({lesson:current[0],wpm:$("wpm").textContent,acc:$("acc").textContent,err:mistakes,date:new Date().toLocaleString("es-ES")});
+ h=h.slice(0,8); localStorage.setItem("typemaster_history",JSON.stringify(h)); renderHistory();
+}
+function renderHistory(){
+ let h=JSON.parse(localStorage.getItem("typemaster_history")||"[]");
+ if(!h.length){$("history").textContent="Sin sesiones guardadas.";return}
+ $("history").innerHTML="<table><tr><th>Lección</th><th>WPM</th><th>Prec.</th><th>Err.</th></tr>"+h.map(x=>`<tr><td>${escapeHtml(x.lesson)}</td><td>${x.wpm}</td><td>${x.acc}</td><td>${x.err}</td></tr>`).join("")+"</table>";
+}
+renderLessons(); renderKeyboard(); renderHistory();
+document.addEventListener("keydown",handleKey);
+$("startBtn").onclick=()=>{if(!started){if(pos>=target.length)newPractice();start()}};
+$("newBtn").onclick=()=>newPractice(true);
+$("trainer").onclick=()=>{if(started)$("input").focus()};
+
+$("lessonPickerBtn").addEventListener("click",(e)=>{
+  e.stopPropagation();
+  $("lessonPicker").classList.toggle("open");
+});
+$("lessonPickerPanel").addEventListener("click",e=>e.stopPropagation());
+document.addEventListener("click",()=>$("lessonPicker").classList.remove("open"));
+$("selectAllBtn").addEventListener("click",()=>{
+  selectedLessons.clear();
+  groups.forEach((g,gi)=>g.lessons.forEach((_,li)=>selectedLessons.add(`${gi}-${li}`)));
+  syncPicker();
+});
+$("selectNoneBtn").addEventListener("click",()=>{
+  selectedLessons=new Set([`${currentIndex.g}-${currentIndex.l}`]);
+  syncPicker();
+});
+
+selectLesson(0,0,document.querySelector(".lesson"));
+</script>
+</body>
+</html>
