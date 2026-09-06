@@ -46,6 +46,23 @@
   .row{display:flex;gap:6px;margin:6px 0;justify-content:center;min-width:850px}.key{height:52px;min-width:48px;padding:5px 7px;border-radius:8px;background:#1b2743;border:1px solid #344666;display:flex;align-items:center;justify-content:center;font-size:13px;color:#dbe5fb;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
   .key.wide{min-width:74px}.key.xwide{min-width:105px}.key.space{min-width:290px}.key.next{outline:2px solid var(--accent);background:#263b64}.key.err{background:#6d2438}
   .bottomgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  .toolbar2{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 0}
+  .toolbar2 label{display:flex;align-items:center;gap:7px;background:#131d33;border:1px solid var(--border);padding:8px 10px;border-radius:10px;color:#cbd5ee;font-size:13px}
+  .toolbar2 input[type="number"]{width:76px;background:#0e1628;color:#fff;border:1px solid #30405f;border-radius:8px;padding:7px}
+  .modebar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
+  .modebtn.active{background:#254c83;border-color:#4d80c4}
+  .goal{font-size:12px;color:var(--muted);margin-top:8px}
+  .goal strong{color:#fff}
+  .heatmap{display:grid;grid-template-columns:repeat(10,minmax(28px,1fr));gap:6px;margin-top:10px}
+  .heat{border:1px solid #344666;border-radius:7px;padding:8px 4px;text-align:center;font-size:12px;background:#19243d}
+  .heat.hot1{background:#3c2d33}.heat.hot2{background:#59303b}.heat.hot3{background:#7b3146}
+  .metricline{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #26344f;font-size:13px}
+  .metricline:last-child{border-bottom:0}
+  .metricline span:last-child{font-weight:700;color:#fff}
+  .result-banner{display:none;margin:14px 0 0;padding:12px 14px;border:1px solid #34517d;border-radius:12px;background:#15233d}
+  .result-banner.show{display:block}
+  .custombox{margin-top:12px}
+  .custombox textarea{width:100%;min-height:90px;background:#0d1526;color:#fff;border:1px solid #30405f;border-radius:10px;padding:10px;resize:vertical}
   .card{background:rgba(17,24,43,.92);border:1px solid var(--border);border-radius:16px;padding:16px}
   .card h3{margin:0 0 10px;font-size:15px}.small{font-size:13px;color:var(--muted)}
   table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;border-bottom:1px solid #26344f;text-align:left}
@@ -85,6 +102,26 @@
     </div>
   </div>
 
+  <div class="modebar">
+    <button class="modebtn active" data-mode="normal">Práctica normal</button>
+    <button class="modebtn" data-mode="errors">Mis teclas difíciles</button>
+    <button class="modebtn" data-mode="numbers">Solo números</button>
+    <button class="modebtn" data-mode="symbols">Solo símbolos</button>
+    <button class="modebtn" data-mode="custom">Texto personalizado</button>
+  </div>
+
+  <div class="toolbar2">
+    <label>Objetivo WPM <input id="goalWpm" type="number" min="5" max="150" value="40"></label>
+    <label>Objetivo precisión <input id="goalAcc" type="number" min="50" max="100" value="97">%</label>
+    <label><input id="strictMode" type="checkbox"> Modo estricto</label>
+    <label><input id="hideKeyboard" type="checkbox"> Ocultar teclado</label>
+  </div>
+  <div class="goal" id="goalText">Objetivo: <strong>40 WPM</strong> y <strong>97% de precisión</strong>.</div>
+
+  <div class="custombox" id="customBox" style="display:none">
+    <textarea id="customText" placeholder="Escribe o pega aquí el texto que quieras practicar..."></textarea>
+  </div>
+
   <div class="stats">
     <div class="stat"><div class="v" id="wpm">0</div><div class="k">PPM / WPM</div></div>
     <div class="stat"><div class="v" id="cpm">0</div><div class="k">Pulsaciones/min</div></div>
@@ -99,6 +136,7 @@
     <input id="input" autocomplete="off" autocapitalize="off" spellcheck="false"/>
     <div class="hint">Haz clic en “Empezar” y escribe sin mirar el teclado. Backspace está permitido, pero los fallos quedan registrados.</div>
     <div class="selection-note" id="selectionNote">Sesión configurada con 1 lección.</div>
+    <div class="result-banner" id="resultBanner"></div>
     <div class="keyboard" id="keyboard"></div>
   </div>
 
@@ -106,10 +144,19 @@
     <div class="card">
       <h3>Diagnóstico de errores</h3>
       <div id="errorMap" class="small">Todavía no hay datos. Empieza una sesión.</div>
+      <div id="heatmap" class="heatmap"></div>
+    </div>
+    <div class="card">
+      <h3>Rendimiento</h3>
+      <div id="performance" class="small"></div>
     </div>
     <div class="card">
       <h3>Últimos resultados</h3>
       <div id="history" class="small">Sin sesiones guardadas.</div>
+    </div>
+    <div class="card">
+      <h3>Récords personales</h3>
+      <div id="records" class="small"></div>
     </div>
   </div>
 </main>
@@ -133,7 +180,9 @@ const groups = [
     ["Signos básicos","Punto, coma, dos puntos, punto y coma, interrogación y exclamación.","Hola, mundo. ¿Qué tal? ¡Muy bien! Atención: practica; repite, corrige."],
     ["Paréntesis y comillas","Paréntesis, comillas y apóstrofos.","(texto) [dato] {valor} «hola» \"mundo\" 'prueba' (123) [ABC] {x+y}"],
     ["Operadores","Símbolos matemáticos y comparadores.","1+2=3 7-4=3 5*6=30 20/4=5 9>3 2<8 5>=5 4<=9 7!=8"],
-    ["Símbolos de programación","Práctica intensiva de símbolos frecuentes.","@ # $ % & / \\ | _ - + = * ^ ~ ` < > [ ] { } ( ) ; : , ."],
+    ["Símbolos de programación","Práctica intensiva de símbolos frecuentes.","@ # $ % & / \\ | _ - + = * ^ ~ ` < > [ ] { } ( ) ; : , . \" · ? ¿ ¡ !"],
+    ["Símbolos españoles completos","Práctica específica de todos los símbolos habituales del teclado español.","\" · $ % & / ( ) = ? ¿ ¡ ! ; : _ - * \" · $ % & / ( ) = ? ¿ ¡ ! ; : _ - *"],
+    ["Combinaciones con Shift","Alternancia de símbolos que requieren Shift.","\" $ % & / ( ) = ? ¡ ! : _ * \" $ % & / ( ) = ? ¡ ! : _ *"],
     ["Correo y web","Patrones habituales de email, URLs y nombres de usuario.","nombre.apellido@correo.es usuario_2026@dominio.com https://ejemplo.es/ruta?id=25&lang=es"],
     ["Contraseñas y cadenas","Secuencias exigentes con mayúsculas, números y símbolos.","R7!pL2#xQ9@ K4$zM8%tN1& Qw3!Er5@Ty7# 2026_Metodo+Ciego!"]
   ]},
@@ -161,7 +210,9 @@ const extraTexts = {
 };
 
 let current = null, currentIndex={g:0,l:0}, target="", pos=0, started=false, startTime=0, timer=null, totalTyped=0, mistakes=0, errKeys={}, deadline=0;
-let selectedLessons = new Set(["0-0"]);
+let selectedLessons = new Set(JSON.parse(localStorage.getItem("typemaster_selected") || '["0-0"]'));
+let sessionMode = "normal";
+let lifetimeErrors = JSON.parse(localStorage.getItem("typemaster_errors") || "{}");
 const $=id=>document.getElementById(id);
 
 function renderLessons(){
@@ -191,27 +242,48 @@ function selectLesson(g,l,el){
 }
 function newPractice(pickRandom=true){
  stopTimer(); started=false; pos=0; totalTyped=0; mistakes=0; errKeys={};
+ $("resultBanner").classList.remove("show");
+ $("resultBanner").textContent="";
 
- if(pickRandom){
-   const pool=[...selectedLessons];
-   if(!pool.length){
-     selectedLessons.add("0-0");
-     syncPicker();
+ if(sessionMode==="custom"){
+   const txt=$("customText").value.trim();
+   target=txt || "Escribe aquí tu propio texto para practicar.";
+   current=["Texto personalizado","Práctica libre con el texto elegido por ti.",target];
+ } else if(sessionMode==="errors"){
+   const difficult=Object.entries(lifetimeErrors).sort((a,b)=>b[1]-a[1]).slice(0,12).map(x=>x[0]);
+   if(difficult.length){
+     let chunks=[];
+     for(let i=0;i<8;i++) chunks.push([...difficult].sort(()=>Math.random()-.5).join(""));
+     target=chunks.join(" ");
+     current=["Mis teclas difíciles","Generado automáticamente a partir de tus errores históricos.",target];
+   } else {
+     target="asdf jklñ qwer uiop zxcv bnm 12345 67890";
+     current=["Mis teclas difíciles","Aún no hay suficiente historial; empieza con una práctica base.",target];
    }
-   const choices=[...selectedLessons];
-   const chosen=choices[Math.floor(Math.random()*choices.length)];
-   const [g,l]=chosen.split("-").map(Number);
-   currentIndex={g,l};
-   current=groups[g].lessons[l];
-   document.querySelectorAll(".lesson").forEach(x=>x.classList.remove("active"));
-   const activeEl=document.querySelector(`.lesson[data-g="${g}"][data-l="${l}"]`);
-   if(activeEl) activeEl.classList.add("active");
-   $("lessonTitle").textContent=current[0];
-   $("lessonDesc").textContent=current[1];
+ } else if(sessionMode==="numbers"){
+   current=["Solo números","Entrenamiento intensivo de fila numérica.","1234567890 0987654321 2026 1492 314159 2500 875 100 9999 120,50 98,7% 1.250,75"];
+   target=current[2];
+ } else if(sessionMode==="symbols"){
+   current=["Solo símbolos","Entrenamiento intensivo de caracteres especiales.","@ # $ % & / \ | _ - + = * ^ ~ ` < > [ ] { } ( ) ; : , . ¿ ? ¡ ! ' \""];
+   target=current[2];
+ } else {
+   if(pickRandom){
+     if(selectedLessons.size===0){selectedLessons.add("0-0");syncPicker();}
+     const choices=[...selectedLessons];
+     const chosen=choices[Math.floor(Math.random()*choices.length)];
+     const [g,l]=chosen.split("-").map(Number);
+     currentIndex={g,l};
+     current=groups[g].lessons[l];
+     document.querySelectorAll(".lesson").forEach(x=>x.classList.remove("active"));
+     const activeEl=document.querySelector(`.lesson[data-g="${g}"][data-l="${l}"]`);
+     if(activeEl) activeEl.classList.add("active");
+   }
+   let variants=[current[2], ...(extraTexts[current[0]]||[])];
+   target=variants[Math.floor(Math.random()*variants.length)];
  }
 
- let variants=[current[2], ...(extraTexts[current[0]]||[])];
- target=variants[Math.floor(Math.random()*variants.length)];
+ $("lessonTitle").textContent=current[0];
+ $("lessonDesc").textContent=current[1];
  renderText(); resetStats(); updateKeyboard();
  $("startBtn").textContent="Empezar";
 }
@@ -243,6 +315,7 @@ function renderLessonPicker(){
 function syncPicker(){
  const boxes=$("lessonPickerList").querySelectorAll('input[type="checkbox"]');
  boxes.forEach(cb=>cb.checked=selectedLessons.has(cb.dataset.key));
+ localStorage.setItem("typemaster_selected", JSON.stringify([...selectedLessons]));
  const n=selectedLessons.size;
  $("lessonPickerBtn").textContent=`Lecciones seleccionadas: ${n} ▾`;
  $("selectionNote").textContent=n===1
@@ -284,8 +357,23 @@ function finish(){
  if(!started)return;
  updateStats(); started=false; stopTimer(); $("startBtn").textContent="Repetir";
  $("bar").style.width="100%";
+
+ const wpm=+$("wpm").textContent;
+ const acc=parseFloat($("acc").textContent);
+ const goalWpm=+$("goalWpm").value;
+ const goalAcc=+$("goalAcc").value;
+ const okW=wpm>=goalWpm, okA=acc>=goalAcc;
+
+ $("resultBanner").innerHTML=
+   `<strong>${okW&&okA?"Objetivo conseguido":"Sesión completada"}</strong><br>`+
+   `Velocidad: ${wpm} WPM · Precisión: ${acc.toFixed(1)}% · Errores: ${mistakes}`+
+   `<br><span class="small">${okW?"✓":"✗"} velocidad objetivo · ${okA?"✓":"✗"} precisión objetivo</span>`;
+ $("resultBanner").classList.add("show");
+
  saveHistory();
- alert(`Sesión finalizada\nVelocidad: ${$("wpm").textContent} WPM\nPrecisión: ${$("acc").textContent}\nErrores: ${mistakes}`);
+ renderRecords();
+ renderPerformance();
+ renderHeatmap();
 }
 function resetStats(){["wpm","cpm","errors"].forEach(id=>$(id).textContent="0");$("acc").textContent="100%";$("time").textContent="00:00";$("errorMap").textContent="Todavía no hay datos. Empieza una sesión."}
 function handleKey(e){
@@ -303,29 +391,78 @@ function handleKey(e){
  if(e.key===expected){
    span.classList.remove("current"); span.classList.add("correct"); pos++;
  } else {
-   mistakes++; errKeys[expected]=(errKeys[expected]||0)+1;
+   mistakes++;
+   errKeys[expected]=(errKeys[expected]||0)+1;
+   lifetimeErrors[expected]=(lifetimeErrors[expected]||0)+1;
+   localStorage.setItem("typemaster_errors",JSON.stringify(lifetimeErrors));
    span.classList.remove("current"); span.classList.add("wrong");
-   setTimeout(()=>{span.classList.remove("wrong");span.classList.add("current")},120);
+   setTimeout(()=>{span.classList.remove("wrong");span.classList.add("current")},$("strictMode").checked?180:120);
  }
  if(pos>=target.length){finish(); return}
  renderText(); updateStats(); updateKeyboard();
 }
 function updateErrors(){
  let entries=Object.entries(errKeys).sort((a,b)=>b[1]-a[1]);
- if(!entries.length){$("errorMap").textContent="Sin errores por ahora.";return}
- $("errorMap").innerHTML="<table><tr><th>Tecla esperada</th><th>Fallos</th></tr>"+entries.map(([k,v])=>`<tr><td><span class="badge">${escapeHtml(k===' '?'Espacio':k)}</span></td><td>${v}</td></tr>`).join("")+"</table>";
+ if(!entries.length){$("errorMap").textContent="Sin errores por ahora.";renderHeatmap();return}
+ $("errorMap").innerHTML="<table><tr><th>Tecla esperada</th><th>Fallos</th></tr>"+
+   entries.map(([k,v])=>`<tr><td><span class="badge">${escapeHtml(k===' '?'Espacio':k)}</span></td><td>${v}</td></tr>`).join("")+
+   "</table>";
+ renderHeatmap();
+}
+
+function renderHeatmap(){
+ const chars="1234567890qwertyuiopasdfghjklñzxcvbnm";
+ $("heatmap").innerHTML=[...chars].map(ch=>{
+   const n=lifetimeErrors[ch]||0;
+   const cls=n>=10?"hot3":n>=5?"hot2":n>=1?"hot1":"";
+   return `<div class="heat ${cls}" title="${n} errores históricos">${ch}<br><small>${n}</small></div>`;
+ }).join("");
+}
+
+function renderPerformance(){
+ const h=JSON.parse(localStorage.getItem("typemaster_history")||"[]");
+ if(!h.length){
+   $("performance").innerHTML="Completa varias sesiones para ver tendencias.";
+   return;
+ }
+ const recent=h.slice(0,5);
+ const avgW=Math.round(recent.reduce((s,x)=>s+(+x.wpm||0),0)/recent.length);
+ const avgA=(recent.reduce((s,x)=>s+(parseFloat(x.acc)||0),0)/recent.length).toFixed(1);
+ $("performance").innerHTML=
+   `<div class="metricline"><span>Media WPM últimas 5</span><span>${avgW}</span></div>`+
+   `<div class="metricline"><span>Precisión media últimas 5</span><span>${avgA}%</span></div>`+
+   `<div class="metricline"><span>Sesiones guardadas</span><span>${h.length}</span></div>`;
+}
+
+function renderRecords(){
+ const h=JSON.parse(localStorage.getItem("typemaster_history")||"[]");
+ if(!h.length){$("records").textContent="Aún no hay récords.";return}
+ const bestW=Math.max(...h.map(x=>+x.wpm||0));
+ const bestA=Math.max(...h.map(x=>parseFloat(x.acc)||0)).toFixed(1);
+ const bestZero=h.filter(x=>+x.err===0).length;
+ $("records").innerHTML=
+   `<div class="metricline"><span>Mejor velocidad</span><span>${bestW} WPM</span></div>`+
+   `<div class="metricline"><span>Mejor precisión</span><span>${bestA}%</span></div>`+
+   `<div class="metricline"><span>Sesiones sin errores</span><span>${bestZero}</span></div>`;
 }
 const kbRows=[
- ["º","1","2","3","4","5","6","7","8","9","0","'","¡","Backspace"],
- ["Tab","q","w","e","r","t","y","u","i","o","p","`","+","ç"],
- ["Caps","a","s","d","f","g","h","j","k","l","ñ","´","Enter"],
- ["Shift","<","z","x","c","v","b","n","m",",",".","-","Shift"],
+ ["º\ª","1\!","2\\"","3\·","4\$","5\%","6\&","7\/","8\(","9\)","0\=","'\?","¡\¿","Backspace"],
+ ["Tab","q","w","e","r","t","y","u","i","o","p","`\^","+\*","ç"],
+ ["Caps","a","s","d","f","g","h","j","k","l","ñ","´\¨","Enter"],
+ ["Shift","<\>","z","x","c","v","b","n","m",",\;",".\:","-\_","Shift"],
  ["Ctrl","Alt","Espacio","AltGr","Ctrl"]
 ];
 function renderKeyboard(){
  $("keyboard").innerHTML=kbRows.map(row=>`<div class="row">${row.map(k=>{
- let cls="key"; if(["Backspace","Tab","Caps","Enter","Shift","Ctrl","Alt","AltGr"].includes(k))cls+=" wide"; if(k==="Espacio")cls+=" space";
- return `<div class="${cls}" data-key="${escapeHtml(k)}">${escapeHtml(k)}</div>`
+   let cls="key";
+   const base=k.split("\")[0];
+   if(["Backspace","Tab","Caps","Enter","Shift","Ctrl","Alt","AltGr"].includes(base))cls+=" wide";
+   if(base==="Espacio")cls+=" space";
+   const parts=k.split("\");
+   const label=parts.length>1
+     ? `<span style="display:flex;flex-direction:column;line-height:1.05;align-items:center"><small style="opacity:.75">${escapeHtml(parts[1])}</small><span>${escapeHtml(parts[0])}</span></span>`
+     : escapeHtml(k);
+   return `<div class="${cls}" data-key="${escapeHtml(base)}" data-alt="${parts[1]?escapeHtml(parts[1]):""}">${label}</div>`
  }).join("")}</div>`).join("");
 }
 function updateKeyboard(){
@@ -333,13 +470,16 @@ function updateKeyboard(){
  if(!target||pos>=target.length)return;
  let ch=target[pos];
  let lookup=ch===" "?"Espacio":ch.toLowerCase();
- let key=[...document.querySelectorAll(".key")].find(k=>k.dataset.key.toLowerCase()===lookup);
+ let key=[...document.querySelectorAll(".key")].find(k=>
+   k.dataset.key.toLowerCase()===lookup ||
+   (k.dataset.alt && k.dataset.alt.toLowerCase()===lookup)
+ );
  if(key)key.classList.add("next");
 }
 function saveHistory(){
  let h=JSON.parse(localStorage.getItem("typemaster_history")||"[]");
  h.unshift({lesson:current[0],wpm:$("wpm").textContent,acc:$("acc").textContent,err:mistakes,date:new Date().toLocaleString("es-ES")});
- h=h.slice(0,8); localStorage.setItem("typemaster_history",JSON.stringify(h)); renderHistory();
+ h=h.slice(0,30); localStorage.setItem("typemaster_history",JSON.stringify(h)); renderHistory();
 }
 function renderHistory(){
  let h=JSON.parse(localStorage.getItem("typemaster_history")||"[]");
@@ -368,6 +508,34 @@ $("selectNoneBtn").addEventListener("click",()=>{
   syncPicker();
 });
 
+document.querySelectorAll(".modebtn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".modebtn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    sessionMode=btn.dataset.mode;
+    $("customBox").style.display=sessionMode==="custom"?"block":"none";
+    newPractice(true);
+  });
+});
+
+$("goalWpm").addEventListener("input",updateGoalText);
+$("goalAcc").addEventListener("input",updateGoalText);
+function updateGoalText(){
+  let w=Math.min(150,Math.max(5,+$("goalWpm").value||40));
+  let a=Math.min(100,Math.max(50,+$("goalAcc").value||97));
+  $("goalText").innerHTML=`Objetivo: <strong>${w} WPM</strong> y <strong>${a}% de precisión</strong>.`;
+}
+$("hideKeyboard").addEventListener("change",()=>{
+  $("keyboard").style.display=$("hideKeyboard").checked?"none":"block";
+});
+$("customText").addEventListener("input",()=>{
+  if(sessionMode==="custom" && !started) newPractice(false);
+});
+
+renderHeatmap();
+renderPerformance();
+renderRecords();
+updateGoalText();
 selectLesson(0,0,document.querySelector(".lesson"));
 </script>
 </body>
