@@ -44,7 +44,12 @@
   #input{position:absolute;opacity:0;pointer-events:none}
   .keyboard{margin-top:20px;background:#0c1325;padding:14px;border-radius:16px;border:1px solid var(--border);overflow-x:auto}
   .row{display:flex;gap:6px;margin:6px 0;justify-content:center;min-width:850px}.key{height:52px;min-width:48px;padding:5px 7px;border-radius:8px;background:#1b2743;border:1px solid #344666;display:flex;align-items:center;justify-content:center;font-size:13px;color:#dbe5fb;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
-  .key.wide{min-width:74px}.key.xwide{min-width:105px}.key.space{min-width:290px}.key.next{outline:2px solid var(--accent);background:#263b64}.key.err{background:#6d2438}
+  .key.wide{min-width:74px}.key.xwide{min-width:105px}.key.space{min-width:290px}.key.next{outline:3px solid #fff;filter:brightness(1.25);transform:translateY(-1px)}.key.err{background:#6d2438}
+  .key.f-lp{background:#5b3f88;border-color:#8063ad}.key.f-lr{background:#315b91;border-color:#4c78ae}.key.f-lm{background:#236f7d;border-color:#3e94a4}.key.f-li{background:#2e754e;border-color:#4b9b6c}
+  .key.f-ri{background:#7b6729;border-color:#a88c3d}.key.f-rm{background:#89512d;border-color:#ad6e43}.key.f-rr{background:#7d3e61;border-color:#a45b7d}.key.f-rp{background:#7a3e42;border-color:#a85a5e}.key.f-th{background:#46526f;border-color:#697897}
+  .finger-legend{display:flex;flex-wrap:wrap;gap:7px 12px;margin:12px 0 2px;padding:10px 12px;background:#111a2d;border:1px solid var(--border);border-radius:10px;font-size:11px;color:#d9e3f7}
+  .finger-item{display:flex;align-items:center;gap:5px}.finger-dot{width:11px;height:11px;border-radius:3px;display:inline-block;border:1px solid rgba(255,255,255,.3)}
+  .finger-dot.f-lp{background:#5b3f88}.finger-dot.f-lr{background:#315b91}.finger-dot.f-lm{background:#236f7d}.finger-dot.f-li{background:#2e754e}.finger-dot.f-ri{background:#7b6729}.finger-dot.f-rm{background:#89512d}.finger-dot.f-rr{background:#7d3e61}.finger-dot.f-rp{background:#7a3e42}.finger-dot.f-th{background:#46526f}
   .bottomgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
   .toolbar2{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 0}
   .toolbar2 label{display:flex;align-items:center;gap:7px;background:#131d33;border:1px solid var(--border);padding:8px 10px;border-radius:10px;color:#cbd5ee;font-size:13px}
@@ -115,6 +120,7 @@
     <label>Objetivo precisión <input id="goalAcc" type="number" min="50" max="100" value="97">%</label>
     <label><input id="strictMode" type="checkbox"> Modo estricto</label>
     <label><input id="hideKeyboard" type="checkbox"> Ocultar teclado</label>
+    <label><input id="errorSound" type="checkbox" checked> Sonido de error</label>
   </div>
   <div class="goal" id="goalText">Objetivo: <strong>40 WPM</strong> y <strong>97% de precisión</strong>.</div>
 
@@ -137,6 +143,17 @@
     <div class="hint">Haz clic en “Empezar” y escribe sin mirar el teclado. Backspace está permitido, pero los fallos quedan registrados.</div>
     <div class="selection-note" id="selectionNote">Sesión configurada con 1 lección.</div>
     <div class="result-banner" id="resultBanner"></div>
+    <div class="finger-legend" aria-label="Colores por dedo">
+      <span class="finger-item"><i class="finger-dot f-lp"></i>Meñique izq.</span>
+      <span class="finger-item"><i class="finger-dot f-lr"></i>Anular izq.</span>
+      <span class="finger-item"><i class="finger-dot f-lm"></i>Medio izq.</span>
+      <span class="finger-item"><i class="finger-dot f-li"></i>Índice izq.</span>
+      <span class="finger-item"><i class="finger-dot f-ri"></i>Índice der.</span>
+      <span class="finger-item"><i class="finger-dot f-rm"></i>Medio der.</span>
+      <span class="finger-item"><i class="finger-dot f-rr"></i>Anular der.</span>
+      <span class="finger-item"><i class="finger-dot f-rp"></i>Meñique der.</span>
+      <span class="finger-item"><i class="finger-dot f-th"></i>Pulgar</span>
+    </div>
     <div class="keyboard" id="keyboard"></div>
   </div>
 
@@ -189,10 +206,98 @@ const groups = [
   {name:"Avanzado", lessons:[
     ["Mayúsculas y Shift","Alternancia de mayúsculas, minúsculas y símbolos.","Madrid España Zaragoza Teruel UAX QWERTY Shift MAYÚSCULAS Minúsculas ÁÉÍÓÚ Ñandú"],
     ["Tildes y diéresis","Caracteres propios del español.","á é í ó ú ü Á É Í Ó Ú Ü pingüino lingüística camión acción corazón día país"],
-    ["Texto profesional","Párrafos con puntuación real.","El objetivo es escribir con precisión, ritmo y constancia. Una buena técnica evita mirar el teclado, reduce errores y mejora la velocidad sostenida."],
+    ["Texto profesional","Texto profesional nuevo en cada práctica y ajustado a la duración seleccionada.",""],
+    ["Texto general","Texto narrativo y divulgativo nuevo en cada práctica y ajustado a la duración seleccionada.",""],
     ["Teclado total","Mezcla completa de letras, números y caracteres especiales.","Informe_2026: Total=1.248,75€; precisión>=98%; usuario@empresa.es; clave={Qw7!_9#}; ¿resultado? ¡Excelente!"]
   ]}
 ];
+
+const professionalBank = [
+ "La reunión comenzó con una revisión breve de los objetivos y continuó con el análisis de las tareas pendientes.",
+ "El equipo acordó priorizar las acciones que aportan mayor valor y posponer las actividades que no son urgentes.",
+ "Antes de tomar una decisión conviene revisar los datos, comprobar las hipótesis y documentar los criterios utilizados.",
+ "Una comunicación profesional clara reduce errores, evita duplicidades y facilita que cada persona comprenda su responsabilidad.",
+ "El informe mensual resume los avances, identifica los riesgos y propone medidas concretas para mejorar los resultados.",
+ "La planificación eficaz combina objetivos realistas, fechas definidas y revisiones periódicas del progreso alcanzado.",
+ "Cuando surge una incidencia, el primer paso consiste en describir el problema con precisión y separar los hechos de las suposiciones.",
+ "La calidad de un proyecto depende tanto de la ejecución técnica como de la coordinación entre las personas que participan en él.",
+ "Un buen procedimiento debe ser sencillo de consultar, fácil de actualizar y suficientemente preciso para orientar el trabajo diario.",
+ "La mejora continua requiere observar el proceso, medir los resultados y aplicar cambios pequeños que puedan evaluarse con rapidez.",
+ "Durante la presentación se expusieron las conclusiones principales y se reservaron unos minutos para resolver dudas específicas.",
+ "La propuesta incluye una estimación de recursos, un calendario de implantación y varios indicadores para comprobar su evolución.",
+ "En los proyectos complejos resulta útil dividir el trabajo en etapas, asignar responsables y establecer puntos claros de seguimiento.",
+ "El correo profesional debe indicar el motivo del mensaje, aportar la información necesaria y cerrar con una petición concreta cuando proceda.",
+ "La revisión final permite detectar incoherencias, corregir cifras y asegurar que el documento responde al objetivo para el que fue preparado.",
+ "Una agenda ordenada ayuda a proteger los periodos de concentración y a reservar tiempo suficiente para las tareas que exigen reflexión.",
+ "El análisis comparativo muestra diferencias relevantes entre los escenarios y permite valorar mejor sus posibles consecuencias.",
+ "La información sensible debe gestionarse con prudencia, utilizando únicamente los canales autorizados y los permisos estrictamente necesarios.",
+ "Antes de iniciar una nueva fase se verificaron los requisitos, la disponibilidad de los recursos y las dependencias con otros equipos.",
+ "La experiencia acumulada demuestra que los cambios sostenibles suelen apoyarse en hábitos simples, repetidos con constancia y medidos con criterios estables.",
+ "El responsable del proyecto solicitó una síntesis de una página con las decisiones adoptadas, los riesgos abiertos y los próximos pasos.",
+ "La precisión en los términos evita interpretaciones distintas y permite que las instrucciones puedan ejecutarse sin depender de explicaciones adicionales.",
+ "Los resultados deben interpretarse dentro de su contexto, porque una cifra aislada puede ser correcta y, al mismo tiempo, conducir a una conclusión equivocada.",
+ "La documentación de cada versión facilita reconstruir los cambios realizados y recuperar una configuración anterior cuando aparece un problema inesperado.",
+ "La sesión de trabajo terminó con tres acuerdos: simplificar el proceso, mejorar el registro de incidencias y revisar los indicadores dentro de dos semanas.",
+ "El presupuesto se elaboró a partir de hipótesis explícitas para que cualquier modificación posterior pueda justificarse y recalcularse con facilidad.",
+ "Una buena presentación no intenta mostrar todos los datos disponibles, sino seleccionar aquellos que ayudan a comprender el problema y tomar una decisión.",
+ "El seguimiento semanal permite descubrir desviaciones antes de que se conviertan en retrasos importantes y ofrece margen para corregirlas.",
+ "Las tareas repetitivas son buenas candidatas para la automatización siempre que el procedimiento esté bien definido y existan controles adecuados.",
+ "La colaboración mejora cuando los documentos tienen una estructura coherente, nombres comprensibles y una ubicación conocida por todas las personas implicadas."
+];
+
+const generalBank = [
+ "Al amanecer, la luz fue entrando poco a poco por las ventanas y transformó los objetos conocidos en formas nuevas y silenciosas.",
+ "El camino avanzaba entre árboles bajos, campos abiertos y pequeñas casas que aparecían a intervalos regulares junto a la carretera.",
+ "En la plaza, varias personas conversaban mientras una bicicleta cruzaba lentamente delante de las terrazas todavía medio vacías.",
+ "Aprender una habilidad nueva exige atención al principio, pero con la práctica muchos movimientos terminan realizándose de forma automática.",
+ "La memoria funciona mejor cuando la información se relaciona con conocimientos previos y se recupera de manera activa en distintas ocasiones.",
+ "Una ciudad puede conocerse a través de sus calles, pero también mediante sus mercados, sus parques y las historias cotidianas de quienes la habitan.",
+ "La lectura pausada permite descubrir matices que pasan inadvertidos cuando solo buscamos terminar una página con rapidez.",
+ "El viento cambió durante la tarde y las nubes, que parecían inmóviles, comenzaron a desplazarse hacia las montañas del horizonte.",
+ "En una biblioteca cada estantería contiene caminos distintos: historia, ciencia, viajes, poesía, ensayo y relatos de épocas muy lejanas.",
+ "La curiosidad suele empezar con una pregunta sencilla y crece cuando encontramos una respuesta que abre, a su vez, nuevas preguntas.",
+ "El sonido de la lluvia era constante, pero dentro de la habitación se escuchaban con claridad el reloj y el paso ocasional de una página.",
+ "Viajar obliga a prestar atención a detalles que en casa apenas notamos, como los horarios, las distancias, los gestos y las costumbres.",
+ "Una conversación interesante no depende de hablar mucho, sino de escuchar bien y formular preguntas que permitan comprender mejor al otro.",
+ "La tecnología cambia con rapidez, aunque muchas de las mejores soluciones siguen dependiendo de principios sencillos y decisiones bien razonadas.",
+ "El paisaje se hizo más amplio al llegar a la colina; desde allí podían distinguirse el río, el puente y una línea de tejados junto al bosque.",
+ "Durante siglos, las personas han utilizado mapas para orientarse, registrar descubrimientos y compartir una representación común del territorio.",
+ "La música puede acompañar tareas rutinarias, marcar el ritmo de una celebración o convertirse en el centro completo de nuestra atención.",
+ "Cada estación modifica los colores, la temperatura y la duración de la luz, aunque los cambios diarios sean tan pequeños que apenas los percibamos.",
+ "Observar con cuidado es una forma de aprendizaje: permite detectar patrones, comparar diferencias y formular explicaciones más precisas.",
+ "El café estaba casi vacío y desde una mesa cercana se veía cómo la gente aceleraba el paso cuando comenzaron a caer las primeras gotas.",
+ "La ciencia avanza mediante preguntas comprobables, observaciones cuidadosas y resultados que otras personas puedan revisar y repetir.",
+ "Un buen hábito se construye con acciones suficientemente pequeñas como para repetirse incluso en los días en que la motivación es menor.",
+ "Las palabras cambian de significado según el contexto, la intención y el tono, por eso comprender un mensaje exige algo más que reconocer cada término.",
+ "El tren salió a la hora prevista y, pocos minutos después, los edificios fueron dejando paso a campos extensos y pueblos separados por grandes distancias.",
+ "En el museo, una misma obra provocaba reacciones diferentes: algunas personas se acercaban mucho y otras preferían observarla desde varios metros.",
+ "La historia cotidiana está formada por decisiones pequeñas que rara vez parecen importantes en el momento en que se toman.",
+ "El mar parecía tranquilo desde lejos, aunque cerca de las rocas se distinguía el movimiento constante de las olas y la espuma.",
+ "Cuando una explicación es clara, podemos seguir cada paso, comprobarlo y detectar exactamente dónde aparece una duda.",
+ "La práctica deliberada resulta más eficaz cuando alterna periodos de concentración, corrección de errores y descansos breves.",
+ "Una mañana ordinaria puede contener muchos detalles: el ruido de una puerta, una llamada inesperada, una noticia y el comienzo de una idea nueva."
+];
+
+function shuffledCopy(arr){
+ const a=[...arr];
+ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+ return a;
+}
+function buildDynamicText(kind){
+ const seconds=+$('duration').value;
+ // Aproximadamente 450 caracteres por minuto: suficiente incluso a velocidades altas sin inundar la pantalla.
+ const targetChars=seconds===60?500:seconds===180?1500:seconds===300?2500:1100;
+ const bank=kind==='professional'?professionalBank:generalBank;
+ let result='', rounds=0;
+ while(result.length<targetChars && rounds<8){
+   for(const sentence of shuffledCopy(bank)){
+     result+=(result?' ':'')+sentence;
+     if(result.length>=targetChars)break;
+   }
+   rounds++;
+ }
+ return result;
+}
 
 const extraTexts = {
  "Números completos":[
@@ -286,8 +391,16 @@ function newPractice(pickRandom=true){
      const activeEl=document.querySelector(`.lesson[data-g="${g}"][data-l="${l}"]`);
      if(activeEl) activeEl.classList.add("active");
    }
-   let variants=[current[2], ...(extraTexts[current[0]]||[])];
-   target=variants[Math.floor(Math.random()*variants.length)];
+   if(current[0]==="Texto profesional"){
+     target=buildDynamicText("professional");
+     current=[current[0],"Texto profesional aleatorio ajustado a "+($("duration").value==="0"?"texto completo":($("duration").value/60)+" min")+".",current[2]];
+   } else if(current[0]==="Texto general"){
+     target=buildDynamicText("general");
+     current=[current[0],"Texto general aleatorio ajustado a "+($("duration").value==="0"?"texto completo":($("duration").value/60)+" min")+".",current[2]];
+   } else {
+     let variants=[current[2], ...(extraTexts[current[0]]||[])];
+     target=variants[Math.floor(Math.random()*variants.length)];
+   }
  }
 
  $("lessonTitle").textContent=current[0];
@@ -384,6 +497,26 @@ function finish(){
  renderHeatmap();
 }
 function resetStats(){["wpm","cpm","errors"].forEach(id=>$(id).textContent="0");$("acc").textContent="100%";$("time").textContent="00:00";$("errorMap").textContent="Todavía no hay datos. Empieza una sesión."}
+let audioCtx=null;
+function initAudio(){
+ if(audioCtx)return;
+ try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){audioCtx=null;}
+}
+function playErrorBeep(){
+ if(!$('errorSound').checked)return;
+ try{
+   initAudio(); if(!audioCtx)return;
+   if(audioCtx.state==='suspended')audioCtx.resume();
+   const osc=audioCtx.createOscillator(), gain=audioCtx.createGain();
+   const now=audioCtx.currentTime;
+   osc.type='sine'; osc.frequency.setValueAtTime(520,now);
+   gain.gain.setValueAtTime(0.0001,now);
+   gain.gain.exponentialRampToValueAtTime(0.025,now+0.005);
+   gain.gain.exponentialRampToValueAtTime(0.0001,now+0.045);
+   osc.connect(gain); gain.connect(audioCtx.destination);
+   osc.start(now); osc.stop(now+0.05);
+ }catch(e){}
+}
 function handleKey(e){
  if(!started) return;
  if(["Shift","Control","Alt","Meta","CapsLock","Tab","Escape"].includes(e.key)) return;
@@ -400,6 +533,7 @@ function handleKey(e){
    span.classList.remove("current"); span.classList.add("correct"); pos++;
  } else {
    mistakes++;
+   playErrorBeep();
    errKeys[expected]=(errKeys[expected]||0)+1;
    lifetimeErrors[expected]=(lifetimeErrors[expected]||0)+1;
    store.set("typemaster_errors",JSON.stringify(lifetimeErrors));
@@ -454,19 +588,19 @@ function renderRecords(){
    `<div class="metricline"><span>Sesiones sin errores</span><span>${bestZero}</span></div>`;
 }
 const kbRows=[
- [{b:"º",s:"ª"},{b:"1",s:"!"},{b:"2",s:'"'},{b:"3",s:"·"},{b:"4",s:"$"},{b:"5",s:"%"},{b:"6",s:"&"},{b:"7",s:"/"},{b:"8",s:"("},{b:"9",s:")"},{b:"0",s:"="},{b:"'",s:"?"},{b:"¡",s:"¿"},{b:"Backspace"}],
- [{b:"Tab"},{b:"q"},{b:"w"},{b:"e"},{b:"r"},{b:"t"},{b:"y"},{b:"u"},{b:"i"},{b:"o"},{b:"p"},{b:"`",s:"^"},{b:"+",s:"*"},{b:"ç"}],
- [{b:"Caps"},{b:"a"},{b:"s"},{b:"d"},{b:"f"},{b:"g"},{b:"h"},{b:"j"},{b:"k"},{b:"l"},{b:"ñ"},{b:"´",s:"¨"},{b:"Enter"}],
- [{b:"Shift"},{b:"<",s:">"},{b:"z"},{b:"x"},{b:"c"},{b:"v"},{b:"b"},{b:"n"},{b:"m"},{b:",",s:";"},{b:".",s:":"},{b:"-",s:"_"},{b:"Shift"}],
- [{b:"Ctrl"},{b:"Alt"},{b:"Espacio"},{b:"AltGr"},{b:"Ctrl"}]
+ [{b:"º",s:"ª",f:"lp"},{b:"1",s:"!",f:"lp"},{b:"2",s:'"',f:"lr"},{b:"3",s:"·",f:"lm"},{b:"4",s:"$",f:"li"},{b:"5",s:"%",f:"li"},{b:"6",s:"&",f:"ri"},{b:"7",s:"/",f:"ri"},{b:"8",s:"(",f:"rm"},{b:"9",s:")",f:"rr"},{b:"0",s:"=",f:"rp"},{b:"'",s:"?",f:"rp"},{b:"¡",s:"¿",f:"rp"},{b:"Backspace",f:"rp"}],
+ [{b:"Tab",f:"lp"},{b:"q",f:"lp"},{b:"w",f:"lr"},{b:"e",f:"lm"},{b:"r",f:"li"},{b:"t",f:"li"},{b:"y",f:"ri"},{b:"u",f:"ri"},{b:"i",f:"rm"},{b:"o",f:"rr"},{b:"p",f:"rp"},{b:"`",s:"^",f:"rp"},{b:"+",s:"*",f:"rp"},{b:"ç",f:"rp"}],
+ [{b:"Caps",f:"lp"},{b:"a",f:"lp"},{b:"s",f:"lr"},{b:"d",f:"lm"},{b:"f",f:"li"},{b:"g",f:"li"},{b:"h",f:"ri"},{b:"j",f:"ri"},{b:"k",f:"rm"},{b:"l",f:"rr"},{b:"ñ",f:"rp"},{b:"´",s:"¨",f:"rp"},{b:"Enter",f:"rp"}],
+ [{b:"Shift",f:"lp"},{b:"<",s:">",f:"lp"},{b:"z",f:"lp"},{b:"x",f:"lr"},{b:"c",f:"lm"},{b:"v",f:"li"},{b:"b",f:"li"},{b:"n",f:"ri"},{b:"m",f:"ri"},{b:",",s:";",f:"rm"},{b:".",s:":",f:"rr"},{b:"-",s:"_",f:"rp"},{b:"Shift",f:"rp"}],
+ [{b:"Ctrl",f:"lp"},{b:"Alt",f:"th"},{b:"Espacio",f:"th"},{b:"AltGr",f:"th"},{b:"Ctrl",f:"rp"}]
 ];
 function renderKeyboard(){
  $("keyboard").innerHTML=kbRows.map(row=>`<div class="row">${row.map(k=>{
-   let cls="key";
+   let cls="key f-"+k.f;
    if(["Backspace","Tab","Caps","Enter","Shift","Ctrl","Alt","AltGr"].includes(k.b))cls+=" wide";
    if(k.b==="Espacio")cls+=" space";
    const label=k.s?`<span style="display:flex;flex-direction:column;line-height:1.05;align-items:center"><small style="opacity:.75">${escapeHtml(k.s)}</small><span>${escapeHtml(k.b)}</span></span>`:escapeHtml(k.b);
-   return `<div class="${cls}" data-base="${escapeHtml(k.b)}" data-shift="${k.s?escapeHtml(k.s):""}">${label}</div>`;
+   return `<div class="${cls}" data-base="${escapeHtml(k.b)}" data-shift="${k.s?escapeHtml(k.s):""}" data-finger="${k.f}">${label}</div>`;
  }).join("")}</div>`).join("");
 }
 function updateKeyboard(){
@@ -489,7 +623,7 @@ function renderHistory(){
 }
 renderLessons(); renderKeyboard(); renderHistory();
 document.addEventListener("keydown",handleKey);
-$("startBtn").onclick=()=>{if(!started){if(pos>=target.length)newPractice();start()}};
+$("startBtn").onclick=()=>{initAudio();if(!started){if(pos>=target.length)newPractice();start()}};
 $("newBtn").onclick=()=>newPractice(true);
 $("trainer").onclick=()=>{if(started)$("input").focus()};
 
@@ -519,6 +653,9 @@ document.querySelectorAll(".modebtn").forEach(btn=>{
   });
 });
 
+$("duration").addEventListener("change",()=>{
+  if(!started && current && (current[0]==="Texto profesional" || current[0]==="Texto general")) newPractice(false);
+});
 $("goalWpm").addEventListener("input",updateGoalText);
 $("goalAcc").addEventListener("input",updateGoalText);
 function updateGoalText(){
