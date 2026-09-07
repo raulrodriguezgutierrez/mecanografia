@@ -97,7 +97,7 @@
         </div>
       </div>
       <select id="duration">
-        <option value="0">Texto completo</option>
+        <option value="0">Sin límite de tiempo</option>
         <option value="60">1 minuto</option>
         <option value="180">3 minutos</option>
         <option value="300">5 minutos</option>
@@ -299,6 +299,164 @@ function buildDynamicText(kind){
  return result;
 }
 
+
+const practiceBanks = {
+ "Fila guía: ASDF JKLÑ":{
+   words:["asdf","jklñ","fdsa","ñlkj","fjal","dksñ","salad","falda","sala","ajada","dalia","laja"],
+   chars:"asdfjklñ"
+ },
+ "Fila superior":{
+   words:["qwer","uiop","quiero","perro","ruido","tipo","puerto","equipo","propio","ropero","requiero","quiere"],
+   chars:"qwertyuiop"
+ },
+ "Fila inferior":{
+   words:["zxcv","bnm","zona","mano","banco","cambio","vena","cava","mama","navaja","bomba","convexo"],
+   chars:"zxcvbnm"
+ },
+ "Todo el alfabeto":{
+   words:["veloz","murciélago","hindú","kiwi","cigüeña","saxofón","jardín","bosque","quiosco","extraño","pájaro","zorro","camión","feliz","brújula","paquete","ñandú","whisky"],
+   chars:"abcdefghijklmnñopqrstuvwxyz"
+ },
+ "Números 1–5":{tokens:["12345","54321","11223","44551","13524","25431","32145","45123","21435","35241","12543","43125"]},
+ "Números 6–0":{tokens:["67890","09876","66778","99006","68079","79680","87906","90678","76098","89760","60987","78609"]},
+ "Números completos":{tokens:["1234567890","2026","1492","28092026","679381245","918273645","1000","25000","9876543210","314159265","271828182","6072026","120945678","567890123"]},
+ "Decimales y porcentajes":{tokens:["12,50","3,1416","98,7%","0,25%","1.250,75","99,99","17,5%","2.026,00","7,25%","10.500,40","0,05%","875,30"]},
+ "Signos básicos":{sentences:[
+   "Hola, mundo. ¿Qué tal? ¡Muy bien!",
+   "Atención: practica; repite, corrige.",
+   "¿Listo? Sí; comienza ahora.",
+   "Precisión, ritmo y calma: ¡adelante!",
+   "¿Otra ronda? Perfecto; sigue así."
+ ]},
+ "Símbolos españoles completos":{tokens:['"',"·","$","%","&","/","(",")","=","?","¿","¡","!",";",":","_","-","*"]},
+ "Combinaciones con Shift":{tokens:["!",'"',"·","$","%","&","/","(",")","=","?","¿","¡",":","_","*"]},
+ "Paréntesis y comillas":{tokens:["(texto)","[dato]","{valor}",'"mundo"',"'prueba'","(123)","[ABC]","{x+y}","(QWERTY)","[2026]","{a:b}"]},
+ "Operadores":{tokens:["1+2=3","7-4=3","5*6=30","20/4=5","9>3","2<8","5>=5","4<=9","7!=8","12+8=20","18/3=6","11*9=99"]},
+ "Símbolos de programación":{tokens:["@","#","$","%","&","/","\\","|","_","-","+","=","*","^","~","`","<",">","[","]","{","}","(",")",";",":",",",".",'"',"·","?","¿","¡","!"]},
+ "Correo y web":{tokens:["nombre.apellido@correo.es","usuario_2026@dominio.com","https://ejemplo.es/ruta?id=25&lang=es","soporte+web@empresa.net","www.practica.es/curso-01","perfil_88@correo.org"]},
+ "Contraseñas y cadenas":{tokens:["R7!pL2#xQ9@","K4$zM8%tN1&","Qw3!Er5@Ty7#","2026_Metodo+Ciego!","X9_ñA7?bC2$","P4*Ru8&Za0!"]},
+ "Mayúsculas y Shift":{words:["Madrid","España","Zaragoza","Teruel","UAX","QWERTY","MAYÚSCULAS","Minúsculas","ÁÉÍÓÚ","Ñandú","Barcelona","Valencia","SHIFT","Control","Teclado"]},
+ "Tildes y diéresis":{words:["á","é","í","ó","ú","ü","Á","É","Í","Ó","Ú","Ü","pingüino","lingüística","camión","acción","corazón","día","país","búho","vergüenza","rápido"]},
+ "Teclado total":{tokens:["A1!","b2@","C3#","d4$","E5%","f6&","G7/","h8(","I9)","j0=","K?","l¿","M¡","n!","Ñ_","o-","P+","q*","R;","s:","T,","u.","V<","w>","X[","y]","Z{","ü}"]}
+};
+
+const advancedSegments = [
+ "Informe #A-2026/09: el equipo revisó 24 tareas; 18 quedaron cerradas, 4 siguen «en curso» y 2 requieren atención inmediata.",
+ "La previsión para el trimestre es de 125.480,75 €, con una variación estimada del +3,8%; ¿podemos mejorarla? ¡Sí, con control semanal!",
+ "Usuario: soporte_01@empresa.es; ruta: /proyectos/2026/fase-3; referencia={QW7!_9#}; estado=\"ACTIVO\".",
+ "A las 08:45 comenzó la sesión; a las 10:30 se registraron 17 incidencias, de las cuales 12 (70,6%) quedaron resueltas.",
+ "Objetivo mínimo: precisión >= 98%; velocidad > 45 WPM; errores <= 3. Si el resultado baja, repetir 1 práctica de 3 minutos.",
+ "El pedido B-394/26 incluye 8 unidades a 42,50 € = 340,00 €; descuento: 7%; entrega prevista: 15/09/2026.",
+ "¿Qué ocurrió después? El técnico respondió: \"Revisaré el módulo nº 4\"; después añadió: ¡no cierres la aplicación todavía!",
+ "Datos de acceso: usuario_2026; clave={Ab3$ñ_7!}; servidor=web-02; puerto: 443; carpeta: C:\\practicas\\teclado.",
+ "La fórmula usada fue (A+B)*C/2; para A=12, B=8 y C=5, el resultado es 50. ¿Correcto? Sí: 20*5/2=50.",
+ "Resumen: calidad=99,1%; coste=2.450,30 €; plazo=5 días; riesgo=\"medio\"; responsable: Área Técnica & Operaciones.",
+ "En la reunión del 07/09/2026 se acordó: 1) revisar cifras; 2) corregir el informe; 3) enviar versión_final_v2.pdf antes de las 18:00.",
+ "La dirección https://ejemplo.es/practica?id=37&modo=pro contiene números, signos y letras; correo alternativo: aula+pro@dominio.net.",
+ "¡Atención! Las teclas 1-0, ¿? ¡!, ; : _ - * / & % $ · \" deben aparecer con frecuencia para entrenar todo el teclado.",
+ "El análisis «Q3-2026» compara 3 escenarios: A=+4,5%; B=-1,2%; C=0,0%. La decisión final se tomará el 30/09.",
+ "Código interno: ES-MAD_2026#47; lote=[A3,B7,C9]; validación={ok:true}; mensaje=\"Proceso completado al 100%\"."
+];
+
+function practiceTargetLength(){
+  const seconds=+$("duration").value;
+  if(seconds===60) return 520;
+  if(seconds===180) return 1550;
+  if(seconds===300) return 2600;
+  if(seconds===600) return 5100;
+  // Sin límite de tiempo: ejercicio completo de unas 1.000–1.200 pulsaciones.
+  return 1100;
+}
+
+function randomShuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function recentPracticeTexts(){
+  try{return JSON.parse(store.get("typemaster_recent_texts")||"[]")}catch(e){return []}
+}
+function rememberPracticeText(t){
+  let recent=recentPracticeTexts();
+  recent.unshift(t);
+  recent=recent.slice(0,50);
+  store.set("typemaster_recent_texts",JSON.stringify(recent));
+}
+function isRecentPractice(t){return recentPracticeTexts().includes(t)}
+
+function repeatToLength(parts,targetChars,separator=" "){
+  let out="";
+  let rounds=0;
+  while(out.length<targetChars && rounds<30){
+    for(const p of randomShuffle(parts)){
+      out+=(out?separator:"")+p;
+      if(out.length>=targetChars) break;
+    }
+    rounds++;
+  }
+  return out;
+}
+
+function generateAdvancedAllKeyboard(){
+  const targetChars=practiceTargetLength();
+  let out="", rounds=0;
+  while(out.length<targetChars && rounds<20){
+    for(const segment of randomShuffle(advancedSegments)){
+      out+=(out?" ":"")+segment;
+      if(out.length>=targetChars) break;
+    }
+    rounds++;
+  }
+  return out;
+}
+
+function generateLessonText(name,baseText){
+  const targetChars=practiceTargetLength();
+
+  if(name==="Texto profesional" || name==="Texto general" || name==="Teclado total"){
+    return generateAdvancedAllKeyboard();
+  }
+
+  const cfg=practiceBanks[name];
+  if(!cfg) return baseText;
+
+  if(cfg.sentences) return repeatToLength(cfg.sentences,targetChars);
+  if(cfg.words) return repeatToLength(cfg.words,targetChars);
+  if(cfg.tokens) return repeatToLength(cfg.tokens,targetChars);
+
+  if(cfg.chars){
+    const units=[];
+    for(let i=0;i<48;i++){
+      let s="";
+      const n=4+Math.floor(Math.random()*7);
+      for(let j=0;j<n;j++) s+=cfg.chars[Math.floor(Math.random()*cfg.chars.length)];
+      units.push(s);
+    }
+    return repeatToLength(units,targetChars);
+  }
+  return baseText;
+}
+
+function uniqueGeneratedText(name,baseText){
+  let candidate="";
+  for(let attempt=0;attempt<25;attempt++){
+    candidate=generateLessonText(name,baseText);
+    // Añade variedad adicional sin alterar el contenido didáctico.
+    if(!isRecentPractice(candidate)){
+      rememberPracticeText(candidate);
+      return candidate;
+    }
+  }
+  // Salvaguarda prácticamente imposible de alcanzar: añade una nueva secuencia de práctica.
+  candidate=generateLessonText(name,baseText)+" "+String(Date.now()).slice(-6);
+  rememberPracticeText(candidate);
+  return candidate;
+}
+
 const extraTexts = {
  "Números completos":[
   "9081726354 1029384756 5647382910 202620272028 15091996 06092026 637281945 918273640",
@@ -375,10 +533,10 @@ function newPractice(pickRandom=true){
    }
  } else if(sessionMode==="numbers"){
    current=["Solo números","Entrenamiento intensivo de fila numérica.","1234567890 0987654321 2026 1492 314159 2500 875 100 9999 120,50 98,7% 1.250,75"];
-   target=current[2];
+   target=uniqueGeneratedText("Números completos",current[2]);
  } else if(sessionMode==="symbols"){
-   current=["Solo símbolos","Entrenamiento intensivo de caracteres especiales.","\" · $ % & / ( ) = ? ¿ ¡ ! ; : _ - * @ # + \ | ^ ~ ` < > [ ] { } , . '"];
-   target=current[2];
+   current=["Solo símbolos","Entrenamiento intensivo de caracteres especiales.","\" · $ % & / ( ) = ? ¿ ¡ ! ; : _ - * @ # + \\ | ^ ~ ` < > [ ] { } , . '"];
+   target=uniqueGeneratedText("Símbolos de programación",current[2]);
  } else {
    if(pickRandom){
      if(selectedLessons.size===0){selectedLessons.add("0-0");syncPicker();}
@@ -391,15 +549,11 @@ function newPractice(pickRandom=true){
      const activeEl=document.querySelector(`.lesson[data-g="${g}"][data-l="${l}"]`);
      if(activeEl) activeEl.classList.add("active");
    }
-   if(current[0]==="Texto profesional"){
-     target=buildDynamicText("professional");
-     current=[current[0],"Texto profesional aleatorio ajustado a "+($("duration").value==="0"?"texto completo":($("duration").value/60)+" min")+".",current[2]];
-   } else if(current[0]==="Texto general"){
-     target=buildDynamicText("general");
-     current=[current[0],"Texto general aleatorio ajustado a "+($("duration").value==="0"?"texto completo":($("duration").value/60)+" min")+".",current[2]];
-   } else {
-     let variants=[current[2], ...(extraTexts[current[0]]||[])];
-     target=variants[Math.floor(Math.random()*variants.length)];
+   const lessonName=current[0];
+   const baseText=current[2]||"";
+   target=uniqueGeneratedText(lessonName,baseText);
+   if(["Texto profesional","Texto general","Teclado total"].includes(lessonName)){
+     current=[lessonName,"Práctica avanzada nueva en cada sesión, ajustada a la duración y diseñada para ejercitar letras, mayúsculas, tildes, números y signos.",baseText];
    }
  }
 
@@ -588,7 +742,7 @@ function renderRecords(){
    `<div class="metricline"><span>Sesiones sin errores</span><span>${bestZero}</span></div>`;
 }
 const kbRows=[
- [{b:"º",s:"ª",f:"lp"},{b:"1",s:"!",f:"lp"},{b:"2",s:'"',f:"lr"},{b:"3",s:"·",f:"lm"},{b:"4",s:"$",f:"li"},{b:"5",s:"%",f:"li"},{b:"6",s:"&",f:"ri"},{b:"7",s:"/",f:"ri"},{b:"8",s:"(",f:"rm"},{b:"9",s:")",f:"rr"},{b:"0",s:"=",f:"rp"},{b:"'",s:"?",f:"rp"},{b:"¡",s:"¿",f:"rp"},{b:"Backspace",f:"rp"}],
+ [{b:"º",s:"ª",f:"lp"},{b:"1",s:"!",f:"lp"},{b:"2",s:'"',f:"lr"},{b:"3",s:"·",f:"lr"},{b:"4",s:"$",f:"lm"},{b:"5",s:"%",f:"li"},{b:"6",s:"&",f:"li"},{b:"7",s:"/",f:"ri"},{b:"8",s:"(",f:"rm"},{b:"9",s:")",f:"rm"},{b:"0",s:"=",f:"rr"},{b:"'",s:"?",f:"rp"},{b:"¡",s:"¿",f:"rp"},{b:"Backspace",f:"rp"}],
  [{b:"Tab",f:"lp"},{b:"q",f:"lp"},{b:"w",f:"lr"},{b:"e",f:"lm"},{b:"r",f:"li"},{b:"t",f:"li"},{b:"y",f:"ri"},{b:"u",f:"ri"},{b:"i",f:"rm"},{b:"o",f:"rr"},{b:"p",f:"rp"},{b:"`",s:"^",f:"rp"},{b:"+",s:"*",f:"rp"},{b:"ç",f:"rp"}],
  [{b:"Caps",f:"lp"},{b:"a",f:"lp"},{b:"s",f:"lr"},{b:"d",f:"lm"},{b:"f",f:"li"},{b:"g",f:"li"},{b:"h",f:"ri"},{b:"j",f:"ri"},{b:"k",f:"rm"},{b:"l",f:"rr"},{b:"ñ",f:"rp"},{b:"´",s:"¨",f:"rp"},{b:"Enter",f:"rp"}],
  [{b:"Shift",f:"lp"},{b:"<",s:">",f:"lp"},{b:"z",f:"lp"},{b:"x",f:"lr"},{b:"c",f:"lm"},{b:"v",f:"li"},{b:"b",f:"li"},{b:"n",f:"ri"},{b:"m",f:"ri"},{b:",",s:";",f:"rm"},{b:".",s:":",f:"rr"},{b:"-",s:"_",f:"rp"},{b:"Shift",f:"rp"}],
